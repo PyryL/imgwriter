@@ -2,6 +2,7 @@
 
 imgwriter / gui.py
 Copyright (c) 2022 Pyry Lahtinen
+https://github.com/PyryL/imgwriter
 File created on 2022-08-20
 
 """
@@ -168,6 +169,7 @@ class InfoView(Frame):
         infoText = [
             "Store data inside images.",
             "Copyright (c) 2022 Pyry Lahtinen",
+            "https://github.com/PyryL/imgwriter",
             "For legal purposes only."
         ]
         Message(self, text=os.linesep.join(infoText), width=300).grid(column=0, row=2)

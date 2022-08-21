@@ -2,6 +2,7 @@
 
 imgwriter / cli.py
 Copyright (c) 2022 Pyry Lahtinen
+https://github.com/PyryL/imgwriter
 File created on 2022-08-20
 
 """
@@ -18,7 +19,12 @@ class App:
         else: self.__performRead()
 
     def __parseArguments(self) -> None:
-        desc = f"Store data inside images{os.linesep}Copyright (c) 2022 Pyry Lahtinen{os.linesep}For legal purposes only."
+        desc = os.linesep.join([
+            "Store data inside images",
+            "Copyright (c) 2022 Pyry Lahtinen",
+            "https://github.com/PyryL/imgwriter",
+            "For legal purposes only."
+        ])
         parser = argparse.ArgumentParser(description=desc, formatter_class=argparse.RawDescriptionHelpFormatter)
 
         parser.add_argument("image", help="The image containing data")

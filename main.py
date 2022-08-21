@@ -2,6 +2,7 @@
 
 imgwriter / main.py
 Copyright (c) 2022 Pyry Lahtinen
+https://github.com/PyryL/imgwriter
 File created on 2022-08-20
 
 """
