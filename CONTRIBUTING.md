@@ -8,4 +8,8 @@ GUI releases have been built with the following command.
 ```
 pyinstaller --onefile --windowed gui.py
 ```
-Python 3.10.6, Fedora Linux 36 Workstation (64-bit)
+
+The following environments were used when building:
+
+* Python 3.10.6, Fedora Linux 36 Workstation (64-bit)
+* Python 3.10.6, Windows 10 (64-bit)
