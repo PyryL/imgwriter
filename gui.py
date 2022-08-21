@@ -10,7 +10,7 @@ from tkinter import Tk, Label, Entry, StringVar, Button, Radiobutton, scrolledte
 from tkinter.ttk import Notebook
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import showerror, showinfo
-from writer import Writer, Reader
+from main import Writer, Reader
 import os
 
 class GUI(Tk):

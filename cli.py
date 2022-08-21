@@ -6,7 +6,7 @@ File created on 2022-08-20
 
 """
 
-from writer import Writer, Reader
+from main import Writer, Reader
 import argparse
 import os
 
