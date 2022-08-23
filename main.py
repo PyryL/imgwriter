@@ -14,11 +14,10 @@ from hashlib import sha256
 
 
 class Writer:
-    def __init__(self, image, payload, dataType: str = None) -> None:
+    def __init__(self, image, payload: bytes, dataType: str) -> None:
         """
         param image should be string (path to file) or PIL.Image.Image
-        param payload should be string or bytes
-        param dataType is the file extension of the data (if type(payload) is not str)
+        param dataType is the file extension of the data
         """
 
         # load image
@@ -26,28 +25,19 @@ class Writer:
         elif isinstance(image, Image.Image): self.__image = image
         else: raise ValueError(f"Parameter image should be string or Pillow image, but {type(image)} was given")
 
-        # prepare payload
-        if type(payload) == str:
-            self.__payload = payload.encode("utf-8")
-            dataType = "txt"
-        elif type(payload) == bytes:
-            self.__payload = payload
-            if type(dataType) is not str:
-                raise ValueError("Data type must be provided when payload is not string")
-        else:
-            raise ValueError(f"Parameter payload should be string or bytes, but {type(payload)} was given")
-        
-        self.__prepareMessage(dataType)
-
         # check image color mode
         if self.__image.mode.lower() not in ["rgb", "rgba"]:
             raise ValueError(f"The provided image is in unsupported mode {self.__image.mode}, RGB or RGBA is needed")
 
-        # check image size
-        if self.__image.width*self.__image.height < len(self.__payload)+51:
-            raise ValueError(f"The provided image is too small")
-        
+        # prepare payload
+        if type(payload) is not bytes:
+            raise ValueError(f"Parameter payload should be string or bytes, but {type(payload)} was given")
+        if type(dataType) is not str:
+            raise ValueError("Data type must be provided when payload is not string")
+        self.__payload = payload
+
         # perform writing
+        self.__prepareMessage(dataType)
         self.__write()
     
     def __prepareMessage(self, dataType: str) -> None:
@@ -71,6 +61,8 @@ class Writer:
         payloadLength = len(self.__payload)
         if payloadLength.bit_length() > 10:
             raise ValueError("Payload is too long")
+        if payloadLength+51 > self.__image.width*self.__image.height:
+            raise ValueError("The provided image is too small")
         self.__message += payloadLength.to_bytes(8, "big")
 
         # the payload itself
@@ -206,6 +198,3 @@ class Reader:
     def payloadBinary(self) -> bytearray:
         return self.__payload
     
-    @property
-    def payloadString(self) -> str:
-        return self.__payload.decode("utf-8")
