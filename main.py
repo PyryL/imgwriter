@@ -10,13 +10,15 @@ File created on 2022-08-20
 from PIL import Image, ExifTags
 from math import floor, ceil
 from random import choice
+from hashlib import sha256
 
 
 class Writer:
-    def __init__(self, image, payload) -> None:
+    def __init__(self, image, payload, dataType: str = None) -> None:
         """
         param image should be string (path to file) or PIL.Image.Image
         param payload should be string or bytes
+        param dataType is the file extension of the data (if type(payload) is not str)
         """
 
         # load image
@@ -25,27 +27,54 @@ class Writer:
         else: raise ValueError(f"Parameter image should be string or Pillow image, but {type(image)} was given")
 
         # prepare payload
-        if type(payload) == str: self.__payload = payload.encode("utf-8")
-        elif type(payload) == bytes: self.__payload = payload
-        else: raise ValueError(f"Parameter payload should be string or bytes, but {type(payload)} was given")
-
-        # add the message length data to the beginning of the payload
-        payloadLength = len(self.__payload)
-        if payloadLength.bit_length() > 64: raise ValueError(f"The payload is too long")
-        messageLengthBinary = f"{payloadLength:064b}"        # str of 64 ones and zeros
-        messageLengthParts = [int(messageLengthBinary[(8*i):(8*i+8)], 2) for i in range(8)]     # array len=8, each item 0...255
-        self.__payload = bytearray(messageLengthParts) + self.__payload
+        if type(payload) == str:
+            self.__payload = payload.encode("utf-8")
+            dataType = "txt"
+        elif type(payload) == bytes:
+            self.__payload = payload
+            if type(dataType) is not str:
+                raise ValueError("Data type must be provided when payload is not string")
+        else:
+            raise ValueError(f"Parameter payload should be string or bytes, but {type(payload)} was given")
+        
+        self.__prepareMessage(dataType)
 
         # check image color mode
         if self.__image.mode.lower() not in ["rgb", "rgba"]:
             raise ValueError(f"The provided image is in unsupported mode {self.__image.mode}, RGB or RGBA is needed")
 
         # check image size
-        if self.__image.width*self.__image.height < payloadLength+8:
+        if self.__image.width*self.__image.height < len(self.__payload)+51:
             raise ValueError(f"The provided image is too small")
         
         # perform writing
         self.__write()
+    
+    def __prepareMessage(self, dataType: str) -> None:
+        self.__message = bytearray()
+
+        # protocol version
+        self.__message.append(0b1)
+
+        # sha256 checksum
+        self.__message += sha256(self.__payload).digest()
+        print("sha", sha256(self.__payload).hexdigest())
+
+        # data type
+        dataTypeBytes = dataType.encode("utf-8")
+        if len(dataTypeBytes) > 10:
+            raise ValueError("Data type is too long to be encoded")
+        dataTypePadding = bytes(10 - len(dataTypeBytes))
+        self.__message += dataTypePadding + dataTypeBytes
+
+        # payload length
+        payloadLength = len(self.__payload)
+        if payloadLength.bit_length() > 10:
+            raise ValueError("Payload is too long")
+        self.__message += payloadLength.to_bytes(8, "big")
+
+        # the payload itself
+        self.__message += self.__payload
 
     def __modifyColor(self, color: int, targetMod: int) -> int:
         """
@@ -67,19 +96,19 @@ class Writer:
         if higherColor > 255: return lowerColor
         return choice([lowerColor, higherColor])
     
-    def __modifyPixel(self, pixel: tuple[int], payloadByte: int) -> tuple[int]:
+    def __modifyPixel(self, pixel: tuple[int], messageByte: int) -> tuple[int]:
         # check that the byte is 8-bit
-        if payloadByte < 0 or payloadByte > 255 or type(payloadByte) != int:
-            raise ValueError(f"Unexpected non-8-bit byte in payload")
+        if messageByte < 0 or messageByte > 255 or type(messageByte) != int:
+            raise ValueError(f"Unexpected non-8-bit byte in message")
 
         # split the 8-bit byte into three parts for R, G and B
-        payloadBinary = f"{payloadByte:08b}"        # str of eight ones and zeros
-        payloadParts = int(payloadBinary[0:3], 2), int(payloadBinary[3:6], 2), int(payloadBinary[6:], 2)    # all ints in 0...7
+        messageBinary = f"{messageByte:08b}"        # str of eight ones and zeros
+        messageParts = int(messageBinary[0:3], 2), int(messageBinary[3:6], 2), int(messageBinary[6:], 2)    # all ints in 0...7
 
         # modify the pixel colors
-        newR = self.__modifyColor(pixel[0], payloadParts[0])
-        newG = self.__modifyColor(pixel[1], payloadParts[1])
-        newB = self.__modifyColor(pixel[2], payloadParts[2])
+        newR = self.__modifyColor(pixel[0], messageParts[0])
+        newG = self.__modifyColor(pixel[1], messageParts[1])
+        newB = self.__modifyColor(pixel[2], messageParts[2])
 
         # return new pixel data
         if len(pixel) == 4: return (newR, newG, newB, pixel[3])
@@ -87,10 +116,10 @@ class Writer:
         
     def __write(self) -> None:
         imageWidth = self.__image.width
-        for i, payloadByte in enumerate(self.__payload):
+        for i, messageByte in enumerate(self.__message):
             x, y = i%imageWidth, i//imageWidth
             oldPixel = self.__image.getpixel((x, y))
-            newPixel = self.__modifyPixel(oldPixel, payloadByte)
+            newPixel = self.__modifyPixel(oldPixel, messageByte)
             self.__image.putpixel((x, y), newPixel)
     
     @property
@@ -125,6 +154,7 @@ class Reader:
             raise ValueError(f"The provided image is in unsupported mode {self.__image.mode}, RGB or RGBA is needed")
 
         # preform read
+        self.__readMetadata()
         self.__read()
     
     def __readFromPixel(self, x: int, y: int) -> int:
@@ -143,16 +173,34 @@ class Reader:
         together = "".join([f"{p:08b}" for p in eightPixels])
         messageLength = int(together, 2)
         return messageLength
+    
+    def __readMetadata(self) -> None:
+        # protocol version
+        protocolVersion = self.__readFromPixel(0, 0)
+        if protocolVersion != 1:
+            raise ValueError(f"Unexpected protocol version {protocolVersion}")
+
+        # sha256 checksum
+        imageWidth = self.__image.width
+        self.__shaChecksum = bytes([self.__readFromPixel(i%imageWidth, i//imageWidth) for i in range(1, 33)])
+
+        # data type
+        dataType = bytearray([self.__readFromPixel(i%imageWidth, i//imageWidth) for i in range(33, 43)])
+        self.__dataType = dataType.strip().decode("utf-8")
+
+        # payload length
+        payloadLengthBytes = [self.__readFromPixel(i%imageWidth, i//imageWidth) for i in range(43, 51)]
+        self.__payloadLength = int.from_bytes(bytearray(payloadLengthBytes), "big")
 
     def __read(self) -> None:
-        payloadLength = self.__readPayloadLength()
         imageWidth = self.__image.width
         payload = bytearray()
-        for i in range(8, payloadLength+8):
-            x, y = i%imageWidth, i//imageWidth
-            payloadByte = self.__readFromPixel(x, y)
+        for i in range(51, self.__payloadLength+51):
+            payloadByte = self.__readFromPixel(i%imageWidth, i//imageWidth)
             payload.append(payloadByte)
         self.__payload = payload
+        if sha256(self.__payload).digest() != self.__shaChecksum:
+            raise ValueError("Payload corrupted")
     
     @property
     def payloadBinary(self) -> bytearray:
