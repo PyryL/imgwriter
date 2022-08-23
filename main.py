@@ -57,9 +57,6 @@ class Writer:
         if color < 0 or color > 255 or type(color) != int:
             raise ValueError()
         
-        # make the targetMod in range 1...8
-        targetMod += 1
-        
         # calculate the two nearest target mods
         n = (color - targetMod) / 8
         lowN, highN = floor(n), ceil(n)
@@ -134,14 +131,11 @@ class Reader:
         pixelData = self.__image.getpixel((x, y))
 
         # calculate targetMod
-        getMod = lambda x : x%8-1 if x%8-1>=0 else 7
-        tR, tG, tB = getMod(pixelData[0]), getMod(pixelData[1]), getMod(pixelData[2])
+        tR, tG, tB = pixelData[0]%8, pixelData[1]%8, pixelData[2]%8
 
         # convert to binary
         tR, tG, tB = f"{tR:03b}", f"{tG:03b}", f"{tB:02b}"
-        targetMod = int(tR+tG+tB, 2)
-
-        return targetMod
+        return int(tR+tG+tB, 2)
 
     def __readPayloadLength(self) -> int:
         imageWidth = self.__image.width
