@@ -62,6 +62,12 @@ class WriteView(Frame):
             self.__payloadFileInput.grid(column=0, row=2, columnspan=2)
             self.__plainTextInput.grid_remove()
     
+    def __extractFileExtension(self, path: str) -> str:
+        """ returns the file extension of the path, or None is such doesn't exist """
+        filename = os.path.split(path)[1]
+        if "." not in filename or filename.rfind(".") == 0: return None
+        return filename.split(".")[-1]
+
     def __submit(self) -> None:
         # get input image
         imageFile = self.__imageInput.filename
@@ -75,6 +81,7 @@ class WriteView(Frame):
         # get payload
         if self.__payloadTypeTextvar.get() == "plain": 
             payload = self.__plainTextInput.get("1.0", "end-1c").encode("utf-8")
+            dataType = "txt"
             if len(payload) == 0:
                 showerror("Empty payload", "Please give some payload first")
                 return
@@ -88,13 +95,14 @@ class WriteView(Frame):
             except FileNotFoundError:
                 showerror("File not found", f"Payload file {self.__payloadFileInput.filename} not found")
                 return
+            dataType = self.__extractFileExtension(self.__payloadFileInput.filename)
         
         # get exif selection
         addExif = self.__exifSelection.get() == 1
 
         # perform writing
         try:
-            writer = Writer(imageFile, payload)
+            writer = Writer(imageFile, payload, dataType)
         except Exception as e:
             showerror("An error occurred", f"An error occurred during the process:{os.linesep}{e}")
             return
@@ -142,7 +150,7 @@ class ReadView(Frame):
     def __readText(self) -> None:
         reader = self.__performRead()
         if reader == None: return
-        self.__setPlainTextOutput(reader.payloadString)
+        self.__setPlainTextOutput(reader.payloadBinary.decode("utf-8"))
 
     def __readFile(self) -> None:
         # perform the reading

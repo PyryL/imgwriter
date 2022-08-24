@@ -43,6 +43,12 @@ class App:
 
         self.__args = vars(parser.parse_args())
 
+    def __extractFileExtension(self, path: str) -> str:
+        """ returns the file extension of the path, or None is such doesn't exist """
+        filename = os.path.split(path)[1]
+        if "." not in filename or filename.rfind(".") == 0: return None
+        return filename.split(".")[-1]
+
     def __decideReadWrite(self) -> None:
         """ Decide whether should read or write data """
         if self.__args["t"] is not None or self.__args["f"] is not None:
@@ -69,9 +75,11 @@ class App:
         # get payload
         if self.__args["t"] is not None:
             payload = str(self.__args["t"]).encode("utf-8")
+            dataType = "txt"
         else:
             try:
                 with open(self.__args["f"], "rb") as file: payload = file.read()
+                dataType = self.__extractFileExtension(self.__args["f"])
             except FileNotFoundError:
                 print(f"File '{self.__args['f']}' not found")
                 exit()
@@ -82,7 +90,7 @@ class App:
         
         # write payload and save
         addExif = self.__args["e"] == True
-        Writer(self.__args["image"], payload).save(savingFilename, addExif)
+        Writer(self.__args["image"], payload, dataType).save(savingFilename, addExif)
         print(f"Writing done and image saved to '{savingFilename}'")
 
     def __performRead(self) -> None:
