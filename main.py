@@ -178,7 +178,7 @@ class Reader:
 
         # data type
         dataType = bytearray([self.__readFromPixel(i%imageWidth, i//imageWidth) for i in range(33, 43)])
-        self.__dataType = dataType.strip().decode("utf-8")
+        self.__dataType = dataType.lstrip(b"\0").decode("utf-8")
 
         # payload length
         payloadLengthBytes = [self.__readFromPixel(i%imageWidth, i//imageWidth) for i in range(43, 51)]
@@ -198,3 +198,7 @@ class Reader:
     def payloadBinary(self) -> bytearray:
         return self.__payload
     
+    @property
+    def dataType(self) -> str:
+        """ The file extension of the payload """
+        return self.__dataType

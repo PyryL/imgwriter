@@ -159,7 +159,8 @@ class ReadView(Frame):
 
         # output
         self.__setPlainTextOutput("")
-        filename = asksaveasfilename()
+        fileTypeOption = [("Original file type", f"*.{reader.dataType}"), ("All files", "*.*")]
+        filename = asksaveasfilename(filetypes=fileTypeOption, defaultextension=fileTypeOption)
         if filename == "": return
         with open(filename, "wb") as file:
             file.write(reader.payloadBinary)
