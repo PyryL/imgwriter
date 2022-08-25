@@ -58,7 +58,7 @@ class Writer:
 
         # payload length
         payloadLength = len(self.__payload)
-        if payloadLength.bit_length() > 10:
+        if payloadLength.bit_length() > 80:
             raise ValueError("Payload is too long")
         if payloadLength+51 > self.__image.width*self.__image.height:
             raise ValueError("The provided image is too small")
