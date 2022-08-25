@@ -10,13 +10,17 @@ File created on 2022-08-20
 from main import Writer, Reader
 import argparse
 import os
+import json
 
 class App:
     def __init__(self) -> None:
         self.__parseArguments()
-        self.__decideReadWrite()
-        if self.__isWriteMode: self.__performWrite()
-        else: self.__performRead()
+        try:
+            self.__decideReadWrite()
+            if self.__isWriteMode: self.__performWrite()
+            else: self.__performRead()
+        except Exception as e:
+            self.__handleError(3, str(e))
 
     def __parseArguments(self) -> None:
         desc = os.linesep.join([
@@ -30,6 +34,8 @@ class App:
         parser.add_argument("image", help="The image containing data")
         parser.add_argument("-i", action="store_true", help="Overwrite the original image (with -t and -f)")
         parser.add_argument("-e", action="store_true", help="Add imgwriter to image's exif data (with -t and -f)")
+        parser.add_argument("-s", action="store_true", help="Silent mode")
+        parser.add_argument("-m", action="store_true", help="Machine readable mode")
 
         # write arguments
         storeDataGroup = parser.add_mutually_exclusive_group()
@@ -42,12 +48,28 @@ class App:
         readDataGroup.add_argument("-o", metavar="PATH", help="Save the image content to file")
 
         self.__args = vars(parser.parse_args())
+        self.__silentMode = self.__args["s"] == True
+        self.__machineMode = self.__args["m"] == True
 
     def __extractFileExtension(self, path: str) -> str:
-        """ returns the file extension of the path, or None is such doesn't exist """
+        """ returns the file extension of the path, or None if such doesn't exist """
         filename = os.path.split(path)[1]
         if "." not in filename or filename.rfind(".") == 0: return None
         return filename.split(".")[-1]
+
+    def __handleError(self, errorCode: int, description: str) -> None:
+        """ Print error details in wanted format and exit """
+        if type(errorCode) != int or type(description) != str:
+            raise ValueError()
+
+        if self.__machineMode and not self.__silentMode:
+            print(json.dumps({
+                "error": errorCode,
+                "description": description
+            }))
+        elif not self.__silentMode:
+            print(description)
+        exit(errorCode)
 
     def __decideReadWrite(self) -> None:
         """ Decide whether should read or write data """
@@ -56,9 +78,7 @@ class App:
         elif self.__args["p"] == True or self.__args["o"] is not None:
             self.__isWriteMode = False
         else:
-            print("Neither read nor write options provided.")
-            print("Pass -t, -f, -p or -o, or --help to learn more.")
-            exit()
+            self.__handleError(1, "Neither read nor write options provided. Pass -t, -f, -p or -o, or --help to learn more.")
     
     def __addFileNameComponent(self, filename: str, component: str) -> str:
         """
@@ -81,8 +101,7 @@ class App:
                 with open(self.__args["f"], "rb") as file: payload = file.read()
                 dataType = self.__extractFileExtension(self.__args["f"])
             except FileNotFoundError:
-                print(f"File '{self.__args['f']}' not found")
-                exit()
+                self.__handleError(2, f"File '{self.__args['f']}' not found")
         
         # come up with the saving filename
         if self.__args["i"] == True: savingFilename = self.__args["image"]
@@ -91,7 +110,14 @@ class App:
         # write payload and save
         addExif = self.__args["e"] == True
         Writer(self.__args["image"], payload, dataType).save(savingFilename, addExif)
-        print(f"Writing done and image saved to '{savingFilename}'")
+
+        if self.__machineMode and not self.__silentMode:
+            print(json.dumps({
+                "success": True,
+                "path": os.path.abspath(savingFilename)
+            }))
+        elif not self.__silentMode:
+            print(f"Writing done and image saved to '{savingFilename}'")
 
     def __performRead(self) -> None:
         # get the payload from image
@@ -99,11 +125,23 @@ class App:
 
         # handle the payload
         if self.__args["p"] == True:
-            print(payload.decode("utf-8"))
+            if self.__machineMode:
+                print(json.dumps({
+                    "success": True,
+                    "payload": payload.decode("utf-8")
+                }))
+            else:
+                print(payload.decode("utf-8"))
         else:
             with open(self.__args["o"], "wb") as file:
                 file.write(payload)
-            print(f"Data read and saved to '{self.__args['o']}'")
+            if self.__machineMode:
+                print(json.dumps({
+                    "success": True,
+                    "path": os.path.abspath(self.__args["o"])
+                }))
+            else:
+                print(f"Data read and saved to '{self.__args['o']}'")
 
 if __name__ == "__main__":
     App()
