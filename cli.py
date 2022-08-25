@@ -105,4 +105,5 @@ class App:
                 file.write(payload)
             print(f"Data read and saved to '{self.__args['o']}'")
 
-App()
+if __name__ == "__main__":
+    App()

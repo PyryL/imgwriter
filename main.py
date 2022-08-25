@@ -48,7 +48,6 @@ class Writer:
 
         # sha256 checksum
         self.__message += sha256(self.__payload).digest()
-        print("sha", sha256(self.__payload).hexdigest())
 
         # data type
         dataTypeBytes = dataType.encode("utf-8")
