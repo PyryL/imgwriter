@@ -158,13 +158,6 @@ class Reader:
         tR, tG, tB = f"{tR:03b}", f"{tG:03b}", f"{tB:02b}"
         return int(tR+tG+tB, 2)
 
-    def __readPayloadLength(self) -> int:
-        imageWidth = self.__image.width
-        eightPixels = [self.__readFromPixel(i%imageWidth, i//imageWidth) for i in range(8)]
-        together = "".join([f"{p:08b}" for p in eightPixels])
-        messageLength = int(together, 2)
-        return messageLength
-    
     def __readMetadata(self) -> None:
         # protocol version
         protocolVersion = self.__readFromPixel(0, 0)
