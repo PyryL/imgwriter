@@ -11,6 +11,7 @@ from main import Writer, Reader
 import argparse
 import os
 import json
+from base64 import b64encode
 
 class App:
     def __init__(self) -> None:
@@ -125,13 +126,17 @@ class App:
 
         # handle the payload
         if self.__args["p"] == True:
+            # convert payload bytes to str
+            try: payloadStr = (payload.decode("utf-8"), False)
+            except UnicodeDecodeError: payloadStr = (b64encode(payload).decode("utf-8"), True)
+
             if self.__machineMode:
-                print(json.dumps({
-                    "success": True,
-                    "payload": payload.decode("utf-8")
-                }))
+                objectToPrint = {"success": True, "payload": payloadStr[0]}
+                if payloadStr[1]: objectToPrint["base64"] = True
+                print(json.dumps(objectToPrint))
             else:
-                print(payload.decode("utf-8"))
+                if payloadStr[1]: print(f"NOTE: Here is the base64 encoded representation of {len(payload)} original bytes")
+                print(payloadStr[0])
         else:
             with open(self.__args["o"], "wb") as file:
                 file.write(payload)
