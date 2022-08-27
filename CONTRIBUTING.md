@@ -6,7 +6,7 @@ Due to copyrights, external contributors are not expected. However, if you happe
 ## Releases
 GUI releases have been built with the following command.
 ```
-pyinstaller --onefile --windowed gui.py
+pyinstaller --onefile --windowed gui.spec
 ```
 
 The following environments were used when building:
