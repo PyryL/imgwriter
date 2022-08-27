@@ -18,6 +18,7 @@ class GUI(Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("ImgWriter")
+        self.resizable(False, False)
 
         notebook = Notebook(self)
         notebook.grid(column=0, row=0, padx=10, pady=10)
@@ -32,7 +33,7 @@ class WriteView(Frame):
         super().__init__(root)
 
         # image file input
-        self.__imageInput = FileWidget(self, "Image file", (0, 0))
+        self.__imageInput = FileWidget(self, "Image file:", ("PNG image file", "*.png"))
         self.__imageInput.grid(column=0, row=0, columnspan=2)
 
         # payload input type
@@ -45,7 +46,7 @@ class WriteView(Frame):
         self.__plainTextInput = scrolledtext.ScrolledText(self, wrap=WORD, width=30, height=10)
         
         # file text input
-        self.__payloadFileInput = FileWidget(self, "Payload file", (0, 0))
+        self.__payloadFileInput = FileWidget(self, "Payload file:")
         self.__payloadTypeChanged()
 
         # include exif
@@ -108,8 +109,12 @@ class WriteView(Frame):
             return
         
         # save the output
-        filename = asksaveasfilename()
+        pngFileType = ("PNG image file", "*.png")
+        filename = asksaveasfilename(filetypes=[pngFileType], defaultextension=[pngFileType])
         if filename == "": return
+        if not filename.lower().endswith(".png"):
+            showerror("Not a PNG file", "Please save the output image as PNG")
+            return
         writer.save(filename, addExif)
         showinfo("File saved", f"Image has been saved to {filename}")
 
@@ -118,7 +123,7 @@ class ReadView(Frame):
     def __init__(self, root) -> None:
         super().__init__(root)
 
-        self.__imageInput = FileWidget(self, "Image file", (0, 0))
+        self.__imageInput = FileWidget(self, "Image file:", ("PNG image file", "*.png"))
         self.__imageInput.grid(column=0, row=0, columnspan=2)
 
         Button(self, text="Read to text", command=self.__readText).grid(column=0, row=1)
@@ -185,19 +190,23 @@ class InfoView(Frame):
 
 
 class FileWidget(Frame):
-    def __init__(self, root, label, position, **kw) -> None:
+    def __init__(self, root, label, fileType: tuple[str, str] = ("All files", "*.*"), **kw) -> None:
         super().__init__(root, **kw)
+        self.__fileType = fileType
         self.__filename = ""
-        self.__uiFilename = StringVar()
-        Label(self, text=label).grid(column=position[0], row=position[1])
-        Button(self, text="Select", command=self.__selectFile).grid(column=position[0]+1, row=position[1])
-        Label(self, textvariable=self.__uiFilename).grid(column=position[0]+2, row=position[1])
+        self.__uiFilename = StringVar(value="Not selected")
+        Label(self, text=label).grid(column=0, row=0)
+        Button(self, text="Select", command=self.__selectFile).grid(column=1, row=0)
+        Label(self, textvariable=self.__uiFilename).grid(column=2, row=0)
     
     def __selectFile(self) -> None:
-        filename = askopenfilename()
+        filename = askopenfilename(filetypes=[self.__fileType], defaultextension=[self.__fileType])
         if filename == () or filename == "": return
         self.__filename = filename
-        self.__uiFilename.set(os.path.split(filename)[1])
+
+        uiFilename = os.path.split(filename)[1]
+        uiFilename = uiFilename if len(uiFilename) <= 18 else uiFilename[:9]+"..."+uiFilename[-9:]
+        self.__uiFilename.set(uiFilename)
     
     @property
     def filename(self) -> str:
