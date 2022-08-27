@@ -11,6 +11,7 @@ from tkinter import Tk, Label, Entry, StringVar, Button, Radiobutton, scrolledte
 from tkinter.ttk import Notebook
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import showerror, showinfo
+import main
 from main import Writer, Reader
 import os
 
@@ -178,7 +179,7 @@ class InfoView(Frame):
 
         Label(self, text="ImgWriter", font=(None, 20, "bold")).grid(column=0, row=0)
 
-        Label(self, text="Version 1.0", fg="gray").grid(column=0, row=1)
+        Label(self, text=f"Version {main.__version__}", fg="gray").grid(column=0, row=1)
 
         infoText = [
             "Store data inside images.",

@@ -7,6 +7,10 @@ File created on 2022-08-20
 
 """
 
+__author__ = "Pyry Lahtinen"
+__author_email__ = "contact@pyry.info"
+__version__ = "1.0.1"
+
 from PIL import Image, ExifTags
 from math import floor, ceil
 from random import choice

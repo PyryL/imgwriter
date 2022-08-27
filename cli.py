@@ -7,7 +7,8 @@ File created on 2022-08-20
 
 """
 
-from main import Writer, Reader
+import main
+from main import Reader, Writer
 import argparse
 import os
 import json
@@ -37,6 +38,7 @@ class App:
         parser.add_argument("-e", action="store_true", help="Add imgwriter to image's exif data (with -t and -f)")
         parser.add_argument("-s", action="store_true", help="Silent mode")
         parser.add_argument("-m", action="store_true", help="Machine readable mode")
+        parser.add_argument("-v", action="version", version=main.__version__)
 
         # write arguments
         storeDataGroup = parser.add_mutually_exclusive_group()
