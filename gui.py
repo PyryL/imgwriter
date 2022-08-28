@@ -7,7 +7,7 @@ File created on 2022-08-20
 
 """
 
-from tkinter import Tk, Label, Entry, StringVar, Button, Radiobutton, scrolledtext, WORD, Frame, Checkbutton, IntVar, INSERT, Message
+from tkinter import Tk, Label, Entry, StringVar, Button, Radiobutton, scrolledtext, WORD, Frame, Checkbutton, IntVar, INSERT, Message, PhotoImage
 from tkinter.ttk import Notebook
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import showerror, showinfo
@@ -20,6 +20,9 @@ class GUI(Tk):
         super().__init__()
         self.title("ImgWriter")
         self.resizable(False, False)
+
+        appIcon = PhotoImage(file="icon.png")
+        self.iconphoto(False, appIcon)
 
         notebook = Notebook(self)
         notebook.grid(column=0, row=0, padx=10, pady=10)
