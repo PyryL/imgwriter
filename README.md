@@ -4,6 +4,10 @@ Copyright (c) 2022 Pyry Lahtinen
 MIT license (read more on LICENSE.txt)
 -->
 
+![MIT license](https://img.shields.io/github/license/PyryL/imgwriter?style=flat-square)
+![GitHub release](https://img.shields.io/github/v/release/PyryL/imgwriter?style=flat-square)
+![Lines of code](https://img.shields.io/tokei/lines/github/PyryL/imgwriter)
+
 <p align="center">
   <img src="icon.png" height="120" alt="ImgWriter icon" />
 </p>
