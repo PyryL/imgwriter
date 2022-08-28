@@ -2,6 +2,7 @@
 
 imgwriter / gui.py
 Copyright (c) 2022 Pyry Lahtinen
+MIT license (read more on LICENSE.txt)
 https://github.com/PyryL/imgwriter
 File created on 2022-08-20
 

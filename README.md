@@ -1,5 +1,8 @@
 # ImgWriter
-<!-- Copyright (c) 2022 Pyry Lahtinen -->
+<!--
+Copyright (c) 2022 Pyry Lahtinen
+MIT license (read more on LICENSE.txt)
+-->
 
 <p align="center">
   <img src="icon.png" height="120" alt="ImgWriter icon" />
